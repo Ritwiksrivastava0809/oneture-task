@@ -1,7 +1,7 @@
 package main
 
 import (
-	"go-file/utils" // Adjust the import path as necessary
+	"go-file/utils"
 	"log"
 	"time"
 )
@@ -9,8 +9,8 @@ import (
 const (
 	ServerURL         = "http://localhost:8080/process-batch"
 	RecordsPerBatch   = 10
-	TotalRecords      = 100000 // Simulated total records
-	MaxRequestsPerSec = 1000   // Max client requests per second
+	TotalRecords      = 100000
+	MaxRequestsPerSec = 1000
 )
 
 func main() {
@@ -18,7 +18,6 @@ func main() {
 
 	start := time.Now()
 
-	// Generate and send batches of records
 	utils.GenerateAndSendBatches(TotalRecords, RecordsPerBatch, MaxRequestsPerSec, ServerURL)
 
 	log.Printf("All records sent in %v", time.Since(start))

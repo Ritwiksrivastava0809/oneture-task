@@ -7,7 +7,6 @@ import (
 	"net/http"
 )
 
-// SendBatch sends a batch of records to the specified server URL
 func SendBatch(batch Batch, serverURL string) {
 	jsonData, err := json.Marshal(batch)
 	if err != nil {
@@ -23,7 +22,7 @@ func SendBatch(batch Batch, serverURL string) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		// Read response body to get more details about the error
+
 		var responseBody bytes.Buffer
 		if _, err := responseBody.ReadFrom(resp.Body); err == nil {
 			log.Printf("Server responded with status: %d, body: %s", resp.StatusCode, responseBody.String())
