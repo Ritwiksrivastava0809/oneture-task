@@ -1,26 +1,49 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-	"go-file/utils"
 	"log"
 	"net/http"
-	"time"
+
+	"github.com/gorilla/websocket"
 )
 
-func main() {
-	router := gin.Default()
+var upgrader = websocket.Upgrader{
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
-	router.POST("/process-batch", utils.HandleBatch)
+func handleConnection(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Failed to upgrade connection: %v", err)
+		return
+	}
+	defer conn.Close()
 
-	s := &http.Server{
-		Addr:           ":8080",
-		Handler:        router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+	log.Printf("Client connected: %s", conn.RemoteAddr())
+
+	for {
+
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			log.Printf("Error reading message: %v", err)
+			break
+		}
+
+		log.Printf("Received batch: %s", message)
+
+		if err := conn.WriteMessage(websocket.TextMessage, []byte("Batch received")); err != nil {
+			log.Printf("Error sending acknowledgment: %v", err)
+			break
+		}
 	}
 
-	log.Println("Gin server is running on port 8080")
-	log.Fatal(s.ListenAndServe())
+	log.Printf("Client disconnected: %s", conn.RemoteAddr())
+}
+
+func main() {
+	http.HandleFunc("/ws", handleConnection)
+	log.Println("WebSocket server starting on :8080")
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

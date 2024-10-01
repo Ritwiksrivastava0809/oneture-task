@@ -1,24 +1,30 @@
 package main
 
 import (
+	"fmt"
 	"go-file/utils"
-	"log"
-	"time"
-)
-
-const (
-	ServerURL         = "http://localhost:8080/process-batch"
-	RecordsPerBatch   = 10
-	TotalRecords      = 100000
-	MaxRequestsPerSec = 1000
+	"time" // Import the time package
 )
 
 func main() {
-	log.Println("Client starting to generate and send records...")
+	serverURL := "ws://localhost:8080/ws"
 
-	start := time.Now()
+	totalRecords := 100000
+	recordsPerBatch := 10
+	maxRequestsPerSec := 1000
 
-	utils.GenerateAndSendBatches(TotalRecords, RecordsPerBatch, MaxRequestsPerSec, ServerURL)
+	fmt.Println("Starting to send records via WebSocket...")
 
-	log.Printf("All records sent in %v", time.Since(start))
+	// Record start time
+	startTime := time.Now()
+
+	// Generate and send batches over WebSocket
+	utils.GenerateAndSendBatchesOverWebSocket(totalRecords, recordsPerBatch, maxRequestsPerSec, serverURL)
+
+	// Record end time
+	endTime := time.Now()
+
+	// Calculate and print the duration
+	duration := endTime.Sub(startTime)
+	fmt.Printf("All records sent successfully in %s\n", duration)
 }
