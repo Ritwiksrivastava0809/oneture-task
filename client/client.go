@@ -4,21 +4,32 @@ import (
 	"go-file/utils"
 	"log"
 	"time"
-)
 
-const (
-	ServerURL         = "http://localhost:8080/process-batch"
-	RecordsPerBatch   = 10
-	TotalRecords      = 100000
-	MaxRequestsPerSec = 1000
+	"github.com/gorilla/websocket"
 )
 
 func main() {
-	log.Println("Client starting to generate and send records...")
+	serverURL := "ws://localhost:8080/ws"
+	totalRecords := 100000
+	recordsPerBatch := 100
+	maxRequestsPerSec := 1000
 
-	start := time.Now()
+	conn, _, err := websocket.DefaultDialer.Dial(serverURL, nil)
+	if err != nil {
+		log.Fatalf("Failed to connect to WebSocket server: %v", err)
+	}
+	defer conn.Close()
 
-	utils.GenerateAndSendBatches(TotalRecords, RecordsPerBatch, MaxRequestsPerSec, ServerURL)
+	startTime := time.Now()
 
-	log.Printf("All records sent in %v", time.Since(start))
+	utils.GenerateandSendBatches(conn, totalRecords, recordsPerBatch, maxRequestsPerSec)
+
+	endTime := time.Now()
+
+	duration := endTime.Sub(startTime)
+
+	log.Printf("All batches sent successfully in %s.", duration)
+	log.Printf("Total records sent: %d", totalRecords)
+	log.Printf("Records per batch: %d", recordsPerBatch)
+	log.Printf("Max requests per second: %d", maxRequestsPerSec)
 }

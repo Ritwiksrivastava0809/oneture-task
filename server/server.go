@@ -1,26 +1,30 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"go-file/utils"
 	"log"
 	"net/http"
-	"time"
+
+	"github.com/gorilla/websocket"
 )
 
-func main() {
-	router := gin.Default()
+var upgrader = websocket.Upgrader{}
 
-	router.POST("/process-batch", utils.HandleBatch)
-
-	s := &http.Server{
-		Addr:           ":8080",
-		Handler:        router,
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+func handleConnection(w http.ResponseWriter, r *http.Request) {
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Printf("Failed to upgrade connection: %v", err)
+		return
 	}
+	defer conn.Close()
 
-	log.Println("Gin server is running on port 8080")
-	log.Fatal(s.ListenAndServe())
+	utils.HandleMessage(conn)
+}
+
+func main() {
+	http.HandleFunc("/ws", handleConnection)
+	log.Println("Server started on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Server error: %v", err)
+	}
 }

@@ -1,35 +1,20 @@
 package utils
 
 import (
-	"bytes"
-	"encoding/json"
 	"log"
-	"net/http"
+	"sync"
+
+	"github.com/gorilla/websocket"
 )
 
-func SendBatch(batch Batch, serverURL string) {
-	jsonData, err := json.Marshal(batch)
+func SendBatchOverWebSocket(conn *websocket.Conn, batch Batch, mu *sync.Mutex) error {
+	mu.Lock()
+	defer mu.Unlock()
+
+	err := conn.WriteJSON(batch)
 	if err != nil {
-		log.Printf("Failed to marshal batch: %v", err)
-		return
+		log.Printf("Error sending batch: %v", err)
+		return err
 	}
-
-	resp, err := http.Post(serverURL, "application/json", bytes.NewBuffer(jsonData))
-	if err != nil {
-		log.Printf("Failed to send batch: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-
-		var responseBody bytes.Buffer
-		if _, err := responseBody.ReadFrom(resp.Body); err == nil {
-			log.Printf("Server responded with status: %d, body: %s", resp.StatusCode, responseBody.String())
-		} else {
-			log.Printf("Server responded with status: %d, but failed to read body: %v", resp.StatusCode, err)
-		}
-	} else {
-		log.Printf("Batch of %d records sent successfully", len(batch.Records))
-	}
+	return nil
 }
