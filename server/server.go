@@ -1,17 +1,14 @@
 package main
 
 import (
+	"go-file/utils"
 	"log"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
+var upgrader = websocket.Upgrader{}
 
 func handleConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -21,29 +18,13 @@ func handleConnection(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log.Printf("Client connected: %s", conn.RemoteAddr())
-
-	for {
-
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Printf("Error reading message: %v", err)
-			break
-		}
-
-		log.Printf("Received batch: %s", message)
-
-		if err := conn.WriteMessage(websocket.TextMessage, []byte("Batch received")); err != nil {
-			log.Printf("Error sending acknowledgment: %v", err)
-			break
-		}
-	}
-
-	log.Printf("Client disconnected: %s", conn.RemoteAddr())
+	utils.HandleMessage(conn)
 }
 
 func main() {
 	http.HandleFunc("/ws", handleConnection)
-	log.Println("WebSocket server starting on :8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Println("Server started on :8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Server error: %v", err)
+	}
 }

@@ -1,30 +1,35 @@
 package main
 
 import (
-	"fmt"
 	"go-file/utils"
-	"time" // Import the time package
+	"log"
+	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 func main() {
 	serverURL := "ws://localhost:8080/ws"
-
 	totalRecords := 100000
-	recordsPerBatch := 10
+	recordsPerBatch := 100
 	maxRequestsPerSec := 1000
 
-	fmt.Println("Starting to send records via WebSocket...")
+	conn, _, err := websocket.DefaultDialer.Dial(serverURL, nil)
+	if err != nil {
+		log.Fatalf("Failed to connect to WebSocket server: %v", err)
+	}
+	defer conn.Close()
 
-	// Record start time
 	startTime := time.Now()
 
-	// Generate and send batches over WebSocket
-	utils.GenerateAndSendBatchesOverWebSocket(totalRecords, recordsPerBatch, maxRequestsPerSec, serverURL)
+	utils.GenerateandSendBatches(conn, totalRecords, recordsPerBatch, maxRequestsPerSec)
 
-	// Record end time
 	endTime := time.Now()
 
-	// Calculate and print the duration
 	duration := endTime.Sub(startTime)
-	fmt.Printf("All records sent successfully in %s\n", duration)
+
+	log.Printf("All batches sent successfully in %s.", duration)
+	log.Printf("Total records sent: %d", totalRecords)
+	log.Printf("Records per batch: %d", recordsPerBatch)
+	log.Printf("Max requests per second: %d", maxRequestsPerSec)
 }
