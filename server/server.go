@@ -1,30 +1,51 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
+	"fmt"
 	"go-file/utils"
 	"log"
-	"net/http"
-
-	"github.com/gorilla/websocket"
+	"net"
 )
 
-var upgrader = websocket.Upgrader{}
-
-func handleConnection(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Printf("Failed to upgrade connection: %v", err)
-		return
-	}
+func handleConnection(conn net.Conn) {
 	defer conn.Close()
 
-	utils.HandleMessage(conn)
+	scanner := bufio.NewScanner(conn)
+
+	for scanner.Scan() {
+		var batch utils.Batch
+		line := scanner.Text()
+
+		if err := json.Unmarshal([]byte(line), &batch); err != nil {
+			log.Printf("Error unmarshalling data: %v", err)
+			continue
+		}
+
+		fmt.Printf("Received batch: %+v\n", batch)
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Printf("Error reading from connection: %v", err)
+	}
 }
 
 func main() {
-	http.HandleFunc("/ws", handleConnection)
-	log.Println("Server started on :8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalf("Server error: %v", err)
+	listen, err := net.Listen("tcp", ":8080")
+	if err != nil {
+		log.Fatalf("Error starting server: %v", err)
+	}
+	defer listen.Close()
+
+	log.Println("Server is listening on port 8080...")
+
+	for {
+		conn, err := listen.Accept()
+		if err != nil {
+			log.Printf("Error accepting connection: %v", err)
+			continue
+		}
+		go handleConnection(conn)
 	}
 }

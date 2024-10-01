@@ -1,20 +1,21 @@
 package utils
 
 import (
-	"log"
-	"sync"
-
-	"github.com/gorilla/websocket"
+	"encoding/json"
+	"net"
 )
 
-func SendBatchOverWebSocket(conn *websocket.Conn, batch Batch, mu *sync.Mutex) error {
-	mu.Lock()
-	defer mu.Unlock()
-
-	err := conn.WriteJSON(batch)
+func SendBatch(conn net.Conn, batch Batch) error {
+	data, err := json.Marshal(batch)
 	if err != nil {
-		log.Printf("Error sending batch: %v", err)
 		return err
 	}
-	return nil
+
+	_, err = conn.Write(data)
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Write([]byte("\n"))
+	return err
 }
